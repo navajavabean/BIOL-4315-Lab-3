@@ -3,3 +3,231 @@ title: "lab3_assembly_annotation"
 output: html_document
 ---
 
+## Question 1:
+
+Assembly statistics:
+
+        Total length:   12760092
+        Fragments:      357
+        Fragments N50:  52735
+        Largest frg:    302365
+        Scaffolds:      0
+        Mean coverage:  8 
+        
+
+The quality of this genome assembly is low and is incomplete for two main reasons.
+Firstly, the assembly is highly fragmented. Being broken into 357 separate pieces means we have many small segments of the genetic code, but we don't know their correct order or what information is missing in the gaps between them.
+Second, this fragmentation is a direct result of the very low sequencing coverage, which is only 8x. Reading each position in the genome only 8 times is not enough to build confidence. This lack of data forced the assembly software to stop and leave the genome in hundreds of disconnected pieces, making it unreliable and incomplete.
+
+## Question 2: 
+
+```{bash, eval = FALSE}
+# had to adjust the code to take it fun within my directory
+docker run --rm \
+  -v "$PWD":/data \
+  -w /data \
+  ezlabgva/busco:v6.0.0_cv1 \
+  busco -i flye_output/assembly.fasta -o busco_output -l saccharomycetaceae_odb12 -m genome -c 8 -f
+```
+Results from dataset saccharomycetaceae_odb12
+
+	C:33.7%[S:33.6%,D:0.1%],F:0.4%,M:65.9%,n:3282,E:5.2%	   
+	1106	Complete BUSCOs (C)	(of which 59 contain internal stop codons)		   
+	1102	Complete and single-copy BUSCOs (S)	   
+	4	Complete and duplicated BUSCOs (D)	   
+	14	Fragmented BUSCOs (F)			   
+	2162	Missing BUSCOs (M)			   
+	3282	Total BUSCO groups searched
+	
+Assembly Statistics:
+
+  	357	Number of scaffolds
+  	357	Number of contigs
+  	12760092	Total length
+  	0.000%	Percent gaps
+  	52 kbp	Scaffold N50
+  	52 kbp	Contigs N50
+	
+The final genome assembly had a total length of 12,760,092 bp but the analysis of the quality showed some significant issues. The BUSCO assessment showed the assembly was highly incomplete, with only 33.7% of expected core genes found completely and 65.9% classified as missing. This poor result is a direct reflection of the inadequate 8x sequencing coverage, which provided insufficient data for the Flye assembler to reconstruct the full genome. Further characterization of the assembly's continuity showed a contig N50 of 52 kbp, a value consistent with the 52,735 bp originally calculated by Flye which is reconfirming a fragmented result.
+
+## Question 3
+
+```{bash, eval = FALSE}
+docker run --rm -v "$(pwd)":/data -w /data quay.io/biocontainers/quast:5.3.0--py313pl5321h5ca1c30_2 \
+  quast.py flye_output/assembly.fasta \
+  -r GCF_000146045.2_R64_genomic.fna \
+  -g GCF_000146045.2_R64_genomic.gff \
+  -o quast_output
+```
+
+All statistics are based on contigs of size >= 500 bp, unless otherwise noted (e.g., "# contigs (>= 0 bp)" and "Total length (>= 0 bp)" include all contigs).
+
+    Assembly                     assembly     
+    # contigs (>= 0 bp)          357          
+    # contigs (>= 1000 bp)       357          
+    # contigs (>= 5000 bp)       357          
+    # contigs (>= 10000 bp)      327          
+    # contigs (>= 25000 bp)      163          
+    # contigs (>= 50000 bp)      76           
+    Total length (>= 0 bp)       12760092     
+    Total length (>= 1000 bp)    12760092     
+    Total length (>= 5000 bp)    12760092     
+    Total length (>= 10000 bp)   12503560     
+    Total length (>= 25000 bp)   9773450      
+    Total length (>= 50000 bp)   6666774      
+    # contigs                    357          
+    Largest contig               302365       
+    Total length                 12760092     
+    Reference length             12157105     
+    GC (%)                       42.01        
+    Reference GC (%)             38.15        
+    N50                          52735        
+    NG50                         53735        
+    N90                          16257        
+    NG90                         18742        
+    auN                          69436.1      
+    auNG                         72880.1      
+    L50                          71           
+    LG50                         65           
+    L90                          249          
+    LG90                         218          
+    # misassemblies              0            
+    # misassembled contigs       0            
+    Misassembled contigs length  0            
+    # local misassemblies        1            
+    # scaffold gap ext. mis.     0            
+    # scaffold gap loc. mis.     0            
+    # unaligned mis. contigs     3            
+    # unaligned contigs          334 + 23 part
+    Unaligned length             12693618     
+    Genome fraction (%)          0.530        
+    Duplication ratio            1.157        
+    # N's per 100 kbp            0.00         
+    # mismatches per 100 kbp     1182.24      
+    # indels per 100 kbp         2816.20      
+    # genomic features           156 + 53 part
+    Largest alignment            34624        
+    Total aligned length         74604        
+    NA50                         -            
+    NGA50                        -            
+    NA90                         -            
+    NGA90                        -            
+    auNA                         125.8        
+    auNGA                        132.1        
+    LA50                         -            
+    LGA50                        -            
+    LA90                         -            
+    LGA90                        -   
+    
+    Alignment-based statistics	assembly
+    Genome fraction (%)	0.53
+    Duplication ratio	1.157
+    # genomic features	156 + 53 part
+    Largest alignment	34624
+    Total aligned length	74604
+    NG50	53735
+    NG90	18742
+    auNG	72880
+    NA50	-
+    NA90	-
+    auNA	125.8
+    NGA50	-
+    NGA90	-
+    auNGA	132.1
+    LG50	65
+    LG90	218
+    LA50	-
+    LA90	-
+    LGA50	-
+    LGA90	-
+
+i) The Genome Fraction was 0.53%. This is extremely low is different with the BUSCO completeness score of 33.7%. This variation shows that while the BUSCO analysis could identify about a third of the expected core genes, less than 1% of the entire assembly could be aligned to the provided reference genome. This could show the sequenced strain genetic variance making a direct comparison difficult.
+
+ii) The Duplication Ratio was 1.157. This value is relatively close to the ideal of 1.0, indicating that large-scale duplications are not a significant issue in the assembled contigs.
+
+iii) The report shows 0 misassemblies and a Misassembled contigs length of 0. That seems positive but it can be a consequence of low genome fraction. Since only a tiny fraction of the assembly could be aligned, there was  little data to check for errors. This suggests that the chosen reference genome does not represent the genomic diversity of the sequenced S. cerevisiae strain; the two are soo divergent that most of the assembly could not be compared making it hard to assess for misassemblies across the whole genome.
+
+## Question 4
+```{r}
+library(Biostrings)
+genome <- readDNAStringSet("GCF_000146045.2_R64_genomic.fna")
+chr1 <- genome[grep("chromosome I", names(genome), ignore.case = TRUE)]
+writeXStringSet(chr1, "R64_chr1.fna")
+```
+
+## Question 5
+There were 2 contigs aligned to the chromosome.
+
+```{r}
+library(Rsamtools)
+library(GenomicAlignments)
+library(GenomicRanges)
+library(Gviz)
+bam_file <- "alignment.sorted.bam"
+bam <- BamFile(bam_file)
+
+alns <- readGAlignments(bam)
+options(ucscChromosomeNames = FALSE)
+
+gr_alns <- granges(alns)
+aln_track <- AnnotationTrack(gr_alns, name = "Contigs", genome = "sacCer3", chromosome = "NC_001133.9")
+
+
+axis_track <- GenomeAxisTrack()
+# Plot
+plotTracks(list(axis_track, aln_track),
+           from = min(start(gr_alns)),
+           to = max(end(gr_alns)),
+           main = "Contig Alignment to Chromosome 1")
+```
+
+
+## Question 6 
+```{r}
+assembly <- readDNAStringSet("flye_output/assembly.fasta")
+lengths <- width(assembly)
+longest_contig <- assembly[which.max(lengths)]
+writeXStringSet(longest_contig, "longest_contig.fasta")
+```
+
+
+## Question 7
+```{bash, eval = FALSE}
+# 1. Convert the SAM file to a compressed BAM file
+samtools view -bS contig_aln.sam > contig_aln.bam
+
+# 2. Sort the BAM file by genomic coordinates
+samtools sort contig_aln.bam -o contig_aln.sorted.bam
+
+# 3. Create an index for the sorted BAM file
+samtools index contig_aln.sorted.bam
+```
+
+## Question 8
+```{r}
+
+# Load your full alignment data
+bam_file <- "contig_aln.sorted.bam"
+alns <- readGAlignments(bam_file)
+gr_alns <- granges(alns)
+
+# --- Add this missing filter step ---
+# 1. Choose a valid chromosome to plot
+target_chr <- "NC_001133.9" # Or another valid chromosome name
+
+# 2. Filter the data to create the 'gr_alns_filtered' object
+gr_alns_filtered <- gr_alns[seqnames(gr_alns) == target_chr]
+
+
+# --- Now the rest of your plotting code will work ---
+# Create Gviz tracks
+aln_track <- AnnotationTrack(gr_alns_filtered, name = "Alignments")
+axis_track <- GenomeAxisTrack()
+
+# Plot the tracks
+plotTracks(list(axis_track, aln_track),
+           from = min(start(gr_alns_filtered)), # This will now find the object
+           to = max(end(gr_alns_filtered)),   # This will also find the object
+           main = paste("Alignments to", target_chr))
+```
+
